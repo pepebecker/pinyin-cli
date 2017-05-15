@@ -2,7 +2,7 @@
 
 'use strict'
 
-const convertPinyin = require('pinyin-converter')
+const convertPinyin = require('pinyin-convert')
 const splitPinyin = require('pinyin-split')
 const ArgumentParser = require('argparse').ArgumentParser
 const readline = require('readline')
