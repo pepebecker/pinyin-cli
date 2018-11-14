@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/pepebecker/pinyin-cli.git"
@@ -20,9 +17,8 @@
   },
   "homepage": "https://github.com/pepebecker/pinyin-cli#readme",
   "dependencies": {
-    "argparse": "^1.0.9",
-    "pinyin-convert": "^1.0.2",
-    "pinyin-split": "^1.0.2",
-    "so": "^1.0.1"
+    "argparse": "^1.0.10",
+    "pinyin-convert": "^1.10.0",
+    "pinyin-split": "^1.27.0"
   }
 }

@@ -6,40 +6,25 @@ const convertPinyin = require('pinyin-convert')
 const splitPinyin = require('pinyin-split')
 const ArgumentParser = require('argparse').ArgumentParser
 const readline = require('readline')
-const so = require('so')
+const { version } = require('./package.json')
 
-var parser = new ArgumentParser({
-  version: '0.0.1',
+const parser = new ArgumentParser({
+  version: version,
   addHelp: false,
   description: 'Pinyin Command Line Utility'
 })
 
 parser.addArgument(['-i', '--input'],		{type: 'string'})
 parser.addArgument(['-n', '--numbered'],	{action: 'storeTrue'})
-parser.addArgument(['-m', '--marked'],		{action: 'storeTrue'})
-parser.addArgument(['-w', '--spacing'],		{action: 'storeTrue'})
-parser.addArgument(['-s', '--split'],		{action: 'storeTrue'})
+parser.addArgument(['-m', '--marked'], { action: 'storeTrue' })
+parser.addArgument(['-w', '--segmented'], { action: 'storeTrue' })
+parser.addArgument(['-s', '--split'], { action: 'storeTrue' })
+parser.addArgument(['-j', '--json'], { action: 'storeTrue' })
+parser.addArgument(['-1', '--first'], { action: 'storeTrue' })
+parser.addArgument(['-a', '--all'], { action: 'storeTrue' })
 parser.addArgument(['-p', '--pipe'],		{action: 'storeTrue'})
-parser.addArgument(['-d', '--debug'],		{action: 'storeTrue'})
 
 const args = parser.parseArgs()
-
-const convert = (text, index) => new Promise((yay, nay) => {
-	convertPinyin(text, {
-		marked: args.marked,
-		numbered: args.numbered,
-		keepSpaces: args.spacing,
-		debug: args.debug
-	}).then((data) => {
-		yay({value: data, index: index})
-	}, (error) => nay('pinyin-cli -> ' + error))
-})
-
-const split = (text, index) => new Promise((yay, nay) => {
-	splitPinyin(text, {debug: args.debug}).then((data) => {
-		yay({value: data, index: index})
-	}, (error) => nay('pinyin-cli -> ' + error))
-})
 
 const print = (text, addNewLine) => {
 	if (args.pipe) {
@@ -53,23 +38,33 @@ const print = (text, addNewLine) => {
 	}
 }
 
-const printConverted = (lines, addNewLine) => {
-	so(function*(){
-		for (var i = 0; i < lines.length; i++) {
-			yield convert(lines[i], i).then((data) => {
-				const addNewLine = data.index < lines.length - 1
-				print(data.value, addNewLine)
-			}, console.log)
+const printConverted = async lines => {
+	for (let i in lines) {
+		let data = await convertPinyin(lines[i], {
+			marked: args.marked,
+			numbered: args.numbered,
+			segmented: args.segmented,
+			everything: args.all
+		})
+		const addNewLine = i < lines.length - 1
+		if (Array.isArray(data)) {
+			if (args.json) {
+				data = JSON.stringify(data)
+			} else if (args.first) {
+				data = data.map(l => (typeof l === 'string' ? l : l[0])).join('')
+			} else {
+				data = data.join('')
+			}
 		}
-	})()
+		print(data, addNewLine)
+	}
 }
 
-const printSplitted = (lines, addNewLine) => {
-	for (var i = 0; i < lines.length; i++) {
-		split(lines[i], i).then((data) => {
-			const addNewLine = data.index < lines.length - 1
-			print(data.value.join(' '), addNewLine)
-		})
+const printSplitted = lines => {
+	for (let i in lines) {
+		const data = splitPinyin(lines[i], args.all, args.json)
+		const addNewLine = i < lines.length - 1
+		print(args.json ? data : data.join(' '), addNewLine)
 	}
 }
 
@@ -86,13 +81,13 @@ if (args.input) {
 		terminal: false
 	})
 
-	let lines = []
+	const lines = []
 
-	rl.on('line', function (line) {
+	rl.on('line', line => {
 		lines.push(line)
 	})
 
-	rl.on('close', function () {
+	rl.on('close', _ => {
 		if (args.split) {
 			printSplitted(lines)
 		} else {
